@@ -1,0 +1,56 @@
+services:
+  db:
+    image: schillermis/schillerserverdb:5.0.2.B1
+    hostname: schillerserverdb
+    ports:
+      - '127.0.0.1:3306:3306'
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      DB_SEMASERVER_PASSWORD: semaserver
+      DB_CONNSERVER_PASSWORD: connserver
+    volumes:
+      - 'db_data:/var/lib/mysql'
+    restart: always
+  as:
+    image: schillermis/schillerserveras:5.0.2.B1
+    hostname: schillerserveras
+    ports:
+      - '0.0.0.0:8080:8080'
+      - '0.0.0.0:8181:8443'
+      - '127.0.0.1:9990:9990'
+    command: ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "-c", "schiller-sema.xml"]
+    environment:
+      JBOSS_JAVA_SIZING: -Xms512M -Xmx2048M -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
+      DB_SEMASERVER_URL: jdbc:mariadb://db:3306/semaserver
+      DB_SEMASERVER_PASSWORD: semaserver
+      WILDFLY_ADMIN_PASSWORD: admin
+    volumes:
+      - 'as_data:/opt/jboss/wildfly/apps'
+    restart: always
+    depends_on:
+      - db
+  cs:
+    image: schillermis/schillerservercs:5.0.2.B1
+    hostname: schillerservercs
+    ports:
+      - '127.0.0.1:7080:8080'
+      - '127.0.0.1:7443:8443'
+    environment:
+      DATABASE: mysql
+      DATABASE_URL: jdbc:mysql://db:3306/semaserver_connectivity
+      DATABASE_PASSWORD: connserver
+    restart: always
+    depends_on:
+      - db
+  ws:
+    image: schillermis/schillerserverws:5.0.2.B1
+    hostname: schillerserverws
+    ports:
+      - '0.0.0.0:80:8080'
+      - '0.0.0.0:443:8443'
+    environment:
+      NGINX_PROXY_PASS: http://as:8080
+    restart: always
+volumes:
+  db_data:
+  as_data:

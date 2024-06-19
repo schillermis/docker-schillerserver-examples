@@ -1,0 +1,17 @@
+services:
+  as:
+    image: schillermis/schillerserveras:5.0.2.B1
+    hostname: schillerserveras
+    ports:
+      - '0.0.0.0:8080:8080'
+      - '0.0.0.0:8181:8443'
+      - '127.0.0.1:9990:9990'
+    command: ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "-c", "schiller-sgw.xml"]
+    environment:
+      JBOSS_JAVA_SIZING: -Xms512M -Xmx2048M -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m
+      WILDFLY_ADMIN_PASSWORD: admin
+    volumes:
+      - 'as_data:/opt/jboss/wildfly/apps'
+    restart: always
+volumes:
+  as_data:
