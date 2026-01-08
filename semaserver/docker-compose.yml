@@ -8,6 +8,12 @@ services:
       MARIADB_ROOT_PASSWORD: root
       DB_SEMASERVER_PASSWORD: semaserver
       DB_CONNSERVER_PASSWORD: connserver
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
     volumes:
       - 'db_data:/var/lib/mysql'
     restart: always
@@ -28,7 +34,8 @@ services:
       - 'as_data:/opt/jboss/wildfly/apps'
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   cs:
     image: schillermis/schillerservercs:5.0.2.B1
     hostname: schillerservercs
@@ -41,7 +48,8 @@ services:
       DATABASE_PASSWORD: connserver
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   ws:
     image: schillermis/schillerserverws:5.0.2.B1
     hostname: schillerserverws
